@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Plan {
+  id                String         @id @default(cuid())
+  name              String         @unique
+  displayName       String
+  priceMonthly      Int
+  priceAnnual       Int            @default(0)
+  maxItems          Int
+  maxBranches       Int
+  hasAR             Boolean        @default(false)
+  hasImageUpload    Boolean        @default(false)
+  hasAnalytics      Boolean        @default(false)
+  hasCustomBranding Boolean        @default(false)
+  hasTableQR        Boolean        @default(false)
+  subscriptions     Subscription[]
+}
+
+model Subscription {
+  id                    String     @id @default(cuid())
+  restaurantId          String     @unique
+  planId                String
+  status                String     @default("trial") // trial | active | grace | suspended | cancelled
+  trialEndsAt           DateTime?
+  currentPeriodStart    DateTime   @default(now())
+  currentPeriodEnd      DateTime
+  gracePeriodEndsAt     DateTime?
+  cancelledAt           DateTime?
+  trialReminderSentAt   DateTime?  // tracks when 7-day reminder was sent
+  suspendReminderSentAt DateTime?
+  restaurant            Restaurant @relation(fields: [restaurantId], references: [id])
+  plan                  Plan       @relation(fields: [planId], references: [id])
+  payments              Payment[]
+}
+
+model Restaurant {
+  id                 String          @id @default(cuid())
+  name               String
+  slug               String          @unique
+  logoUrl            String?
+  address            String?
+  phone              String?
+  onboardingComplete Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  menuItems          MenuItem[]
+  users              User[]
+  subscription       Subscription?
+  payments           Payment[]
+  branches           Branch[]
+  tables             Table[]
+  menuPageViews      MenuPageView[]
+  adminActions       AdminAction[]
+}
+
+model MenuItem {
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  price          Float
+  category       String
+  imageUrl       String?
+  glbUrl         String?
+  available      Boolean         @default(true)
+  sortOrder      Int             @default(0)
+  arStatus       String          @default("none") // none | pending | assigned
+  tags           String          @default("") // comma-separated: vegan,vegetarian,halal,spicy,nuts,gluten-free
+  availableFrom  String?         // HH:MM — null means always
+  availableTo    String?         // HH:MM
+  availableDays  String          @default("everyday") // everyday | weekdays | weekends
+  restaurantId   String
+  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id])
+  menuItemViews  MenuItemView[]
+  arRequests     ARRequest[]
+  arAssignments  ARAssignment[]
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  passwordHash  String
+  role          String        @default("owner") // owner | superadmin
+  staffRole     String?       // null = main owner, manager | waiter
+  inviteToken   String?       @unique
+  inviteExpiry  DateTime?
+  restaurantId  String
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  adminActions  AdminAction[]
+}
+
+model Table {
+  id           String     @id @default(cuid())
+  restaurantId String
+  number       Int
+  label        String?    // optional custom label e.g. "Window seat"
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, number])
+}
+
+model Payment {
+  id             String       @id @default(cuid())
+  restaurantId   String
+  subscriptionId String
+  amountTZS      Int
+  provider       String       // mpesa | tigopesa | airtel | halopesa | azampesa
+  providerRef    String?
+  status         String       @default("pending") // pending | completed | failed | refunded
+  billingPeriod  String
+  createdAt      DateTime     @default(now())
+  confirmedAt    DateTime?
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id])
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+}
+
+model Branch {
+  id           String     @id @default(cuid())
+  restaurantId String
+  name         String
+  slug         String     @unique
+  address      String?
+  createdAt    DateTime   @default(now())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model MenuPageView {
+  id           String     @id @default(cuid())
+  restaurantId String
+  source       String     @default("direct") // qr | direct | share
+  userAgent    String?
+  viewedAt     DateTime   @default(now())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model MenuItemView {
+  id       String   @id @default(cuid())
+  itemId   String
+  viewedAt DateTime @default(now())
+  item     MenuItem @relation(fields: [itemId], references: [id])
+}
+
+model AdminAction {
+  id           String     @id @default(cuid())
+  restaurantId String
+  adminId      String
+  action       String
+  details      String
+  createdAt    DateTime   @default(now())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  admin        User       @relation(fields: [adminId], references: [id])
+}
+
+model ARModel {
+  id          String         @id @default(cuid())
+  name        String
+  tags        String         @default("")
+  filePath    String
+  sizeBytes   Int
+  isPublished Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  assignments ARAssignment[]
+}
+
+model ARAssignment {
+  id         String   @id @default(cuid())
+  modelId    String
+  menuItemId String
+  assignedAt DateTime @default(now())
+  model      ARModel  @relation(fields: [modelId], references: [id])
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model ARRequest {
+  id           String   @id @default(cuid())
+  menuItemId   String
+  restaurantId String
+  description  String?
+  status       String   @default("pending") // pending | in_progress | done | rejected
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
+}

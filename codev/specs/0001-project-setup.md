@@ -1,9 +1,10 @@
 # Spec 0001 — Project Setup & Static Menu Display
 
-**Status**: Ready for implementation  
+**Status**: ✅ Implemented  
 **Priority**: Must  
 **Phase**: 1 of 4  
 **Created**: 2026-04-27  
+**Completed**: 2026-04-30  
 **Author**: Lion (Hima Tech)
 
 ---
@@ -44,14 +45,14 @@ A restaurant client needs a digital menu that customers can access by scanning a
 
 ## Acceptance Criteria
 
-- [ ] `npm run dev` starts with no errors
-- [ ] Prisma schema has `Restaurant`, `MenuItem`, `User` models
-- [ ] `/menu/[slug]` renders menu items from database, grouped by category
-- [ ] Each item shows: image, name, description, price in TZS
-- [ ] `/admin/login` works with NextAuth email/password
-- [ ] `/admin` (protected) shows restaurant QR code as downloadable PNG
-- [ ] QR code points to the correct `/menu/[slug]` URL
-- [ ] Page is mobile-responsive and usable on low-end Android
+- [x] `npm run dev` starts with no errors
+- [x] Prisma schema has `Restaurant`, `MenuItem`, `User` models
+- [x] `/menu/[slug]` renders menu items from database, grouped by category
+- [x] Each item shows: image, name, description, price in TZS
+- [x] `/admin/login` works with NextAuth email/password
+- [x] `/admin` (protected) shows restaurant QR code as downloadable PNG
+- [x] QR code points to the correct `/menu/[slug]` URL
+- [x] Page is mobile-responsive and usable on low-end Android
 
 ---
 
